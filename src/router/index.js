@@ -1,9 +1,13 @@
 import Vue from 'vue'
-import Router from 'vue-router'
-import HelloWorld from '@/components/HelloWorld'
 import App from '@/components/App'
-import Connection from '@/components/Connection'
+import Vuex from 'vuex'
+import VueResource from 'vue-resource'
+import Router from 'vue-router'
 
+window.vue = new Vue()
+
+Vue.use(Vuex)
+Vue.use(VueResource)
 Vue.use(Router)
 
 export default new Router({
@@ -14,14 +18,19 @@ export default new Router({
       component: App
     },
     {
-    	path:'/:accessToken',
+    	path:'/:keyword',
     	name:'App',
     	component: App
     },
-    {
-    	path: '/connection',
-    	name: 'Connection',
-    	component: Connection,
-    }
   ]
 })
+
+Date.prototype.yyyymmdd = function() {
+  var mm = this.getMonth() + 1 // getMonth() is zero-based
+  var dd = this.getDate()
+
+  return [this.getFullYear(),
+          (mm>9 ? '' : '0') + mm,
+          (dd>9 ? '' : '0') + dd
+         ].join('')
+}

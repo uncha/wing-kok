@@ -1,120 +1,198 @@
 <template>
-	<!-- <div>
+	<div id="sns-list">
 		<el-row>
-		 <el-col :span="8" v-for="(o, index) in $store.state.instagramData.data" :key="o.id" :offset="index > 0 ? 2 : 0">
-		    <el-card :body-style="{ padding: '0px' }">
-		      <img :src="o.images.standard_resolution.url" class="image">
-		      <div style="padding: 14px;">
-		        <span>{{ o.caption.text }}</span>
-		        <div class="bottom clearfix">
-		          <time class="time">{{ o.created_time }}</time>
-		          <el-button type="text" class="button">Operating button</el-button>
-		        </div>
-		      </div>
-		    </el-card>
-		  </el-col>
+			<el-col>
+				<div class="search-wrap">
+					<el-input v-model="searchValue" placeholder="Please input">
+						<el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
+				  </el-input>
+				</div>
+				<div class="sns-list">
+					<el-checkbox-group v-model="checkedSNSList">
+			    	<el-checkbox v-for="sns in snsList" :label="sns" :key="sns">{{sns | capitalize}}</el-checkbox>
+					</el-checkbox-group>
+				</div>
+			</el-col>
 		</el-row>
-	</div> -->
-	<waterfall
-		align="center"
-    :line-gap="200"
-    :min-line-gap="100"
-    :max-line-gap="220"
-    :single-max-width="300"
-		auto-resize="true"
-	>
-	  <!-- each component is wrapped by a waterfall slot -->
-	  <waterfall-slot
-	  	v-for="(item, index) in $store.state.instagramData.data"
-	    :width="item.images.standard_resolution.width"
-	    :height="item.images.standard_resolution.height + (contentsHeightArr[index] || 0)"
-	    :order="index"
-      ref="waterfall"
-	    move-class="item-move"
-	  >
-	    <div class="slot-wrap">
-        <div class="cont-wrap">
-        	<img style="width:100%; height:100%" :src="item.images.standard_resolution.url" class="image" />
-	        <div ref="infoBox" class="cont">
-	        	<span class="text">{{ item.caption.text }}</span>
-		        <div class="bottom clearfix">
-		          <time class="time">{{ item.created_time }}</time>
-		          <el-button type="primary" class="button">Operating button</el-button>
-		        </div>
-	        </div>
-        </div>
-      </div>
-	  </waterfall-slot>
-	</waterfall>
+		<!-- instagram
+		<masonry :cols="{default: 5, 1440: 4, 1000: 3, 800:2, 700: 1}">
+		  <el-row :gutter="10" class="list-wrap" v-for="(item, index) in listData" :key="index">
+		  	<el-col>
+		  		<img style="width:100%" :src="item.images.standard_resolution.url" class="image">
+		  	</el-col>
+		  	<el-col v-if="item.caption">
+		  		<el-row :gutter="10">
+		  			<el-col class="profile" :span="6"><img :src="item.caption.from.profile_picture" /></el-col>
+		  			<el-col :span="18">
+		  				<el-row class="info">
+		  					<el-col class="name">{{item.caption.from.full_name}}</el-col>
+		  					<el-col class="created">{{item.created_time}}</el-col>
+		  				</el-row>
+		  			</el-col>
+		  		</el-row>
+		  	</el-col>
+		  	<el-col class="text" v-if="item.caption">
+	        <span>{{ item.caption.text }}</span>
+		  	</el-col>
+		  </el-row>
+		</masonry>
+		-->
+		<masonry :cols="{default: 5, 1440: 4, 1000: 3, 800:2, 700: 1}">
+			<el-row v-if="isCheckedSNS(item.type)" :gutter="10" class="list-wrap" v-for="(item, index) in listParse" :key="index">
+		  	<div class="list-box-area">
+		  		<el-col>
+			  		<img style="width:100%" :src="item.image" class="image" />
+			  	</el-col>
+			  	<el-col>
+			  		<el-row :gutter="10">
+			  			<el-col class="profile" :span="6"></el-col>
+			  			<el-col v-if="item.type!='instgram' || item.caption" :span="18">
+			  				<el-row class="info">
+			  					<el-col class="name">{{item.title}}</el-col>
+			  					<el-col class="created">{{item.created}}</el-col>
+			  				</el-row>
+			  			</el-col>
+			  		</el-row>
+			  	</el-col>
+		  	</div>
+		  </el-row>
+		</masonry>
+	  <el-row class="more">
+	  	<el-col>
+	  		<el-button class="more-btn" type="primary" @click="handleMore">+ 더보기</el-button>
+	  	</el-col>
+	  </el-row>
+	</div>
 </template>
 
 <script type="text/javascript">
+	import Vue from 'vue'
 	import $ from 'jquery'
-	import Waterfall from 'vue-waterfall/lib/waterfall'
-	import WaterfallSlot from 'vue-waterfall/lib/waterfall-slot'
+	import Router from 'vue-router'
+	import VueMasonry from 'vue-masonry-css'
+
+	Vue.use(VueMasonry)
+	Vue.use(Router)
 
 	export default {
 		components: {
-			Waterfall,
-			WaterfallSlot,
+
 		},
 		data () {
+			/* data를 아래와 같은 형태로 맞춰야함
+			{
+				image:'',
+				title:'',
+				created:'',
+				caption:'',
+			}
+			*/
 			return {
-				keyword: '김수현',
-				contentsHeightArr: [],
+				searchValue: '',
+				listData: [],
+				snsList: ['instagram', 'youtube', 'flickr'],
+				checkedSNSList: ['instagram', 'youtube', 'flickr'],
 			}
 		},
+		watch: {
+	    '$route' (to, from) {
+	      this.dataLoad(this.searchValue)
+	    }
+	  },
 		computed: {
+			listParse () {
+				// instagram
+				if(this.$store.state.instagramData.data){
+					for(let value of this.$store.state.instagramData.data) {
+						this.listData.push({
+							type:'instagram',
+							image:value.images.standard_resolution.url,
+							created:new Date(value.created_time * 1000).yyyymmdd(),
+							caption:value.caption && value.caption.text,
+							title:value.caption && value.caption.from.username,
+						})
+					}
+				}
+				// youtube
+				if(this.$store.state.youtubeData.items){
+					for(let value of this.$store.state.youtubeData.items) {
+						this.listData.push({
+							type:'youtube',
+							image:value.snippet.thumbnails.high.url,
+              created:new Date(value.snippet.publishedAt).yyyymmdd(),
+              caption:value.snippet.description,
+              title:value.snippet.title,
+						})
+					}
+				}
+				// flicker
+				if(this.$store.state.flickerData.photos){
+					for(let value of this.$store.state.flickerData.photos.photo) {
+						this.listData.push({
+							type:'flickr',
+							image:`http://farm${value.farm}.static.flickr.com/${value.server}/${value.id}_${value.secret}.jpg`,
+              title:value.title,
+              created:new Date(value.dateupload * 1000).yyyymmdd(),
+						})
+					}
+				}
 
+				this.listData.sort(function (a, b) {
+					return a.created > b.created ? -1 : a.created < b.created ? 1 : 0
+				})
+
+				return this.listData
+			},
 		},
 		created () {
-			const token = this.$route.query.accessToken
-
-			this.$store.dispatch('instagramLoad', {token:token, keyword:this.keyword}).then(()=>{
-				for(let i in this.$refs.infoBox){
-					setTimeout(()=>{
-						let origin = this.$store.state.instagramData.data[i].images.standard_resolution.width
-						let change = $(this.$refs.infoBox[i]).outerWidth(true)
-						let per = origin / change
-
-						this.contentsHeightArr.push($(this.$refs.infoBox[i]).outerHeight(true) * per)
-					}, 1000)
-				}
-			})
+			this.dataLoad(this.$route.query.keyword)
 		},
+		methods: {
+			dataLoad (keyword) {
+				console.log('dataLoad = ' + keyword)
+
+				this.listData = []
+				this.searchValue = keyword
+
+				this.$store.dispatch('instagramLoad', {keyword:keyword})
+				this.$store.dispatch('youtubeLoad', {keyword:keyword})
+				this.$store.dispatch('flickerLoad', {keyword:keyword})
+			},
+			handleSearch () {
+				this.$router.push({ path: '/', query: { keyword: this.searchValue }})
+			},
+			handleMore () {
+				this.$store.dispatch('addedList')
+			},
+			isCheckedSNS (sns) {
+				for(let value of this.checkedSNSList) {
+					if(sns == value){
+						return true
+					}
+				}
+
+				return false
+			},
+		}
 	}
 </script>
 
 <style scoped>
-	.item-move {
-    transition: all .5s cubic-bezier(.55,0,.1,1);
-    -webkit-transition: all .5s cubic-bezier(.55,0,.1,1);
-  }
+	*{line-height: 150%}
+	#sns-list {width: 100%; overflow-x: hidden;}
 
-  .slot-wrap{
-  	padding:7px;
-  }
+	.search-wrap {max-width: 600px; width:100%; margin:50px auto 10px;}
+	.sns-list {text-align: center; margin-bottom: 50px}
 
-  .cont-wrap{
-  	padding:15px;
-  }
+	.list-wrap {word-break: break-all; padding:15px; border-radius: 10px;}
+	.list-wrap .list-box-area{background: #EFEFEF; position: relative;}
+	.list-wrap .image {margin-bottom: 10px; border-radius: 10px;}
+	.list-wrap .profile {text-align: center; margin-bottom: 10px}
+	.list-wrap .profile > img{width: 54px; height:54px; vertical-align: middle;}
+	.list-wrap .info {line-height: 25px; font-size:12px;}
+	.list-wrap .info .created{color:#CCC;}
+	.list-wrap .text{font-size: 14px}
 
-  .cont {
-  	word-wrap: break-word;
-  }
-
-  .text {
-  	margin:10px 0;
-  	display: block;
-  }
-
-  .time{
-  	display: block;
-  	margin:5px 0;
-  }
-
-  .cont-wrap{
-  	background: #EFEFEF;
-  	border-radius: 5px;
-  }
+	.more {text-align: center; margin:80px 0;}
+	.more .more-btn{width:250px;}
 </style>
