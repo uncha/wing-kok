@@ -15,8 +15,6 @@ export default new Vuex.Store({
   },
   mutations: {
     updateData(state, param) {
-      console.log(state)
-
       switch(param.sns){
         case 'instagram':
           state.instagramData = param.data
@@ -32,7 +30,7 @@ export default new Vuex.Store({
     modifyData(state, param) {
       switch(param.sns){
         case 'instagram':
-          for(var i=0; i<param.data.data.length; i++){
+          for(let i=0; i<param.data.data.length; i++){
             state.instagramData.data.push(param.data.data[i])
           }
 
@@ -40,14 +38,20 @@ export default new Vuex.Store({
           state.instagramData.pagination = param.data.pagination
           break
         case 'youtube':
-          for(var i=0; i<param.data.items.length; i++){
+          for(let i=0; i<param.data.items.length; i++){
             state.youtubeData.items.push(param.data.items[i])
           }
 
           state.youtubeData.nextPageToken = param.data.nextPageToken
           break
         case 'flicker':
+          for(let i=0; i<param.data.photos.photo.length; i++){
+            state.flickerData.photos.photo.push(param.data.photos.photo[i])
+          }
 
+          state.flickerData.photos.page = param.data.photos.page
+          state.flickerData.photos.pages = param.data.photos.pages
+          state.flickerData.photos.perpage = param.data.photos.perpage
           break
       }
     },
@@ -84,7 +88,6 @@ export default new Vuex.Store({
         Vue.jsonp(url, {
           callbackName: 'flickerCallback'
         }).then(data => {
-          console.log(data)
           context.commit('updateData', {sns:'flicker', data:data})
           resolve()
         }).catch(response => {
@@ -92,10 +95,11 @@ export default new Vuex.Store({
         })
       })
     },
-    addedList (context) {
+    addedList (context, param) {
       return new Promise(resolve => {
         // instagram added
-        Vue.http.get(this.state.instagramData.pagination.next_url).then(response => {
+        let instagramURL = this.state.instagramData.pagination.next_url
+        Vue.http.get(instagramURL).then(response => {
           context.commit('modifyData', {sns:'instagram', data:response.data})
           resolve()
         }, response => {
@@ -103,11 +107,23 @@ export default new Vuex.Store({
         })
 
         // youtube added
-        let youtubeURL = `https://content.googleapis.com/youtube/v3/search?maxResults=50&part=snippet&q=${this.searchValue}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw&nextPageToken=${this.state.instagramData.nextPageToken}`
+        let youtubeURL = `https://content.googleapis.com/youtube/v3/search?maxResults=50&part=snippet&q=${param.keyword}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw&nextPageToken=${this.state.instagramData.nextPageToken}`
         Vue.http.get(youtubeURL).then(response => {
           context.commit('modifyData', {sns:'youtube', data:response.data})
           resolve()
         }, response => {
+          console.log(response)
+        })
+
+        //flicker added
+        console.log(this.state.flickerData.photos)
+        let flickerURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickerCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickerData.photos.page + 1}`
+        Vue.jsonp(flickerURL, {
+          callbackName: 'flickerCallback'
+        }).then(data => {
+          context.commit('modifyData', {sns:'flicker', data:data})
+          resolve()
+        }).catch(response => {
           console.log(response)
         })
       })

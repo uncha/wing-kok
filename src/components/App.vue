@@ -68,11 +68,9 @@
 <script type="text/javascript">
 	import Vue from 'vue'
 	import $ from 'jquery'
-	import Router from 'vue-router'
 	import VueMasonry from 'vue-masonry-css'
 
 	Vue.use(VueMasonry)
-	Vue.use(Router)
 
 	export default {
 		components: {
@@ -101,6 +99,8 @@
 	  },
 		computed: {
 			listParse () {
+				this.listData = []
+
 				// instagram
 				if(this.$store.state.instagramData.data){
 					for(let value of this.$store.state.instagramData.data) {
@@ -149,9 +149,6 @@
 		},
 		methods: {
 			dataLoad (keyword) {
-				console.log('dataLoad = ' + keyword)
-
-				this.listData = []
 				this.searchValue = keyword
 
 				this.$store.dispatch('instagramLoad', {keyword:keyword})
@@ -162,7 +159,7 @@
 				this.$router.push({ path: '/', query: { keyword: this.searchValue }})
 			},
 			handleMore () {
-				this.$store.dispatch('addedList')
+				this.$store.dispatch('addedList', {keyword:this.searchValue})
 			},
 			isCheckedSNS (sns) {
 				for(let value of this.checkedSNSList) {
