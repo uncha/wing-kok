@@ -11,7 +11,7 @@ export default new Vuex.Store({
   state: {
     instagramData:{},
     youtubeData:{},
-    flickerData:{},
+    flickrData:{},
   },
   mutations: {
     updateData(state, param) {
@@ -22,8 +22,8 @@ export default new Vuex.Store({
         case 'youtube':
           state.youtubeData = param.data
           break
-        case 'flicker':
-          state.flickerData = param.data
+        case 'flickr':
+          state.flickrData = param.data
           break
       }
     },
@@ -44,14 +44,14 @@ export default new Vuex.Store({
 
           state.youtubeData.nextPageToken = param.data.nextPageToken
           break
-        case 'flicker':
+        case 'flickr':
           for(let i=0; i<param.data.photos.photo.length; i++){
-            state.flickerData.photos.photo.push(param.data.photos.photo[i])
+            state.flickrData.photos.photo.push(param.data.photos.photo[i])
           }
 
-          state.flickerData.photos.page = param.data.photos.page
-          state.flickerData.photos.pages = param.data.photos.pages
-          state.flickerData.photos.perpage = param.data.photos.perpage
+          state.flickrData.photos.page = param.data.photos.page
+          state.flickrData.photos.pages = param.data.photos.pages
+          state.flickrData.photos.perpage = param.data.photos.perpage
           break
       }
     },
@@ -81,14 +81,14 @@ export default new Vuex.Store({
         })
       })
     },
-    flickerLoad (context, param) {
+    flickrLoad (context, param) {
       return new Promise(resolve => {
-        let url = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickerCallback&sort=date-posted-desc&extras=date_upload`
+        let url = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload`
 
         Vue.jsonp(url, {
-          callbackName: 'flickerCallback'
+          callbackName: 'flickrCallback'
         }).then(data => {
-          context.commit('updateData', {sns:'flicker', data:data})
+          context.commit('updateData', {sns:'flickr', data:data})
           resolve()
         }).catch(response => {
           console.log(response)
@@ -115,13 +115,13 @@ export default new Vuex.Store({
           console.log(response)
         })
 
-        //flicker added
-        console.log(this.state.flickerData.photos)
-        let flickerURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickerCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickerData.photos.page + 1}`
-        Vue.jsonp(flickerURL, {
-          callbackName: 'flickerCallback'
+        //flickr added
+        console.log(this.state.flickrData.photos)
+        let flickrURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickrData.photos.page + 1}`
+        Vue.jsonp(flickrURL, {
+          callbackName: 'flickrCallback'
         }).then(data => {
-          context.commit('modifyData', {sns:'flicker', data:data})
+          context.commit('modifyData', {sns:'flickr', data:data})
           resolve()
         }).catch(response => {
           console.log(response)

@@ -39,19 +39,19 @@
 		-->
 		<masonry :cols="{default: 5, 1440: 4, 1000: 3, 800:2, 700: 1}">
 			<el-row v-if="isCheckedSNS(item.type)" :gutter="10" class="list-wrap" v-for="(item, index) in listParse" :key="index">
-		  	<div class="list-box-area">
+		  	<div class="list-box-area" @click="handleShowDialog(index)">
 		  		<el-col>
 			  		<img style="width:100%" :src="item.image" class="image" />
 			  	</el-col>
 			  	<el-col>
 			  		<el-row :gutter="10">
-			  			<el-col class="profile" :span="6"></el-col>
-			  			<el-col v-if="item.type!='instgram' || item.caption" :span="18">
-			  				<el-row class="info">
-			  					<el-col class="name">{{item.title}}</el-col>
-			  					<el-col class="created">{{item.created}}</el-col>
-			  				</el-row>
-			  			</el-col>
+		  				<span class="ico-sns">
+		  					<img style="" :src="imgSrc(item.type)" class="image" />
+		  				</span>
+		  				<el-row class="info" style="">
+		  					<el-col class="name">{{item.title}}</el-col>
+		  					<el-col class="created">{{item.created}}</el-col>
+		  				</el-row>
 			  		</el-row>
 			  	</el-col>
 		  	</div>
@@ -62,6 +62,20 @@
 	  		<el-button class="more-btn" type="primary" @click="handleMore">+ 더보기</el-button>
 	  	</el-col>
 	  </el-row>
+		<el-dialog
+		  :title="(selectedId != undefined) ? listData[selectedId].title : ''"
+		  :visible.sync="dialogVisible"
+		  width="30%">
+		  <template v-if="listData[selectedId]">
+			  <p v-if="listData[selectedId].type != 'youtube'">
+			  	<img style="width:100%;" :src="listData[selectedId].image" />
+			  </p>
+			  <div v-else class="video-container">
+			  	<iframe :src="youtubeSrc" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+			  </div>
+		  </template>
+		  <p class="caption">{{listData[selectedId] && listData[selectedId].caption}}</p>
+		</el-dialog>
 	</div>
 </template>
 
@@ -90,6 +104,8 @@
 				listData: [],
 				snsList: ['instagram', 'youtube', 'flickr'],
 				checkedSNSList: ['instagram', 'youtube', 'flickr'],
+				dialogVisible: false,
+				selectedId:undefined,
 			}
 		},
 		watch: {
@@ -98,6 +114,9 @@
 	    }
 	  },
 		computed: {
+			youtubeSrc () {
+				return `https://www.youtube.com/embed/${this.listData[this.selectedId].videoId}`
+			},
 			listParse () {
 				this.listData = []
 
@@ -119,20 +138,21 @@
 						this.listData.push({
 							type:'youtube',
 							image:value.snippet.thumbnails.high.url,
-              created:new Date(value.snippet.publishedAt).yyyymmdd(),
-              caption:value.snippet.description,
-              title:value.snippet.title,
+            	created:new Date(value.snippet.publishedAt).yyyymmdd(),
+            	caption:value.snippet.description,
+            	title:value.snippet.title,
+            	videoId:value.id.videoId,
 						})
 					}
 				}
-				// flicker
-				if(this.$store.state.flickerData.photos){
-					for(let value of this.$store.state.flickerData.photos.photo) {
+				// flickr
+				if(this.$store.state.flickrData.photos){
+					for(let value of this.$store.state.flickrData.photos.photo) {
 						this.listData.push({
 							type:'flickr',
 							image:`http://farm${value.farm}.static.flickr.com/${value.server}/${value.id}_${value.secret}.jpg`,
-              title:value.title,
-              created:new Date(value.dateupload * 1000).yyyymmdd(),
+	            title:value.title,
+	            created:new Date(value.dateupload * 1000).yyyymmdd(),
 						})
 					}
 				}
@@ -153,7 +173,7 @@
 
 				this.$store.dispatch('instagramLoad', {keyword:keyword})
 				this.$store.dispatch('youtubeLoad', {keyword:keyword})
-				this.$store.dispatch('flickerLoad', {keyword:keyword})
+				this.$store.dispatch('flickrLoad', {keyword:keyword})
 			},
 			handleSearch () {
 				this.$router.push({ path: '/', query: { keyword: this.searchValue }})
@@ -170,11 +190,31 @@
 
 				return false
 			},
+			imgSrc (sns) {
+				let src = ''
+				switch(sns) {
+					case 'instagram':
+						src = require('../assets/ico-instagram.png')
+						break
+					case 'youtube':
+						src = require('../assets/ico-youtube.png')
+						break
+					case 'flickr':
+						src = require('../assets/ico-flickr.png')
+						break
+				}
+
+				return src
+			},
+			handleShowDialog (index) {
+				this.selectedId = index
+				this.dialogVisible = true
+			},
 		}
 	}
 </script>
 
-<style scoped>
+<style>
 	*{line-height: 150%}
 	#sns-list {width: 100%; overflow-x: hidden;}
 
@@ -182,14 +222,38 @@
 	.sns-list {text-align: center; margin-bottom: 50px}
 
 	.list-wrap {word-break: break-all; padding:15px; border-radius: 10px;}
+	.list-wrap:hover{background: #EEE; cursor: pointer;}
 	.list-wrap .list-box-area{background: #EFEFEF; position: relative;}
 	.list-wrap .image {margin-bottom: 10px; border-radius: 10px;}
 	.list-wrap .profile {text-align: center; margin-bottom: 10px}
 	.list-wrap .profile > img{width: 54px; height:54px; vertical-align: middle;}
-	.list-wrap .info {line-height: 25px; font-size:12px;}
-	.list-wrap .info .created{color:#CCC;}
+	.list-wrap .info {line-height: 25px; font-size:12px; float:left;  margin-left:10px; width:calc(100% - 60px);}
+	.list-wrap .info .name{overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-top: 2px; position:relative;}
+	.list-wrap .info .created{color:#AAA;}
+	.list-wrap .ico-sns > img{width:40px; height:40px; float:left; margin-left:10px}
 	.list-wrap .text{font-size: 14px}
 
 	.more {text-align: center; margin:80px 0;}
 	.more .more-btn{width:250px;}
+
+	.el-dialog {width:100% !important; max-width:600px;}
+	.el-dialog .el-dialog__body {padding:10px 20px 20px 20px;}
+	.el-dialog .el-dialog__header .el-dialog__headerbtn {top:0; right:-28px; padding:3px 6px; background: #000}
+	.el-dialog .caption {margin-top:10px;}
+
+	.video-container {
+	position: relative;
+	padding-bottom: 56.25%;
+	padding-top: 30px; height: 0; overflow: hidden;
+	}
+
+	.video-container iframe,
+	.video-container object,
+	.video-container embed {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	}
 </style>
