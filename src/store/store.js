@@ -12,6 +12,7 @@ export default new Vuex.Store({
     instagramData:{},
     youtubeData:{},
     flickrData:{},
+    tumblrData:{},
   },
   mutations: {
     updateData(state, param) {
@@ -24,6 +25,10 @@ export default new Vuex.Store({
           break
         case 'flickr':
           state.flickrData = param.data
+          break
+        case 'tumblr':
+          state.tumblrData = param.data
+          console.log(param.data)
           break
       }
     },
@@ -59,7 +64,7 @@ export default new Vuex.Store({
   actions: {
   	instagramLoad (context, param) {
     	return new Promise(resolve => {
-    		let url = `https://api.instagram.com/v1/tags/${param.keyword}/media/recent?access_token=2945410720.02e1557.585a0311f0024312a5f7428984943f8e`
+    		let url = `https://api.instagram.com/v1/tags/${param.keyword.trim()}/media/recent?access_token=2945410720.02e1557.585a0311f0024312a5f7428984943f8e`
 
     		Vue.http.get(url).then(response => {
 			    context.commit('updateData', {sns:'instagram', data:response.data})
@@ -71,7 +76,7 @@ export default new Vuex.Store({
     },
     youtubeLoad (context, param) {
       return new Promise(resolve => {
-        let url = `https://content.googleapis.com/youtube/v3/search?maxResults=50&part=snippet&q=${param.keyword}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw`
+        let url = `https://content.googleapis.com/youtube/v3/search?maxResults=20&part=snippet&q=${param.keyword}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw`
 
         Vue.http.get(url).then(response => {
           context.commit('updateData', {sns:'youtube', data:response.data})
@@ -83,12 +88,26 @@ export default new Vuex.Store({
     },
     flickrLoad (context, param) {
       return new Promise(resolve => {
-        let url = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload`
+        let url = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=20&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload`
 
         Vue.jsonp(url, {
           callbackName: 'flickrCallback'
         }).then(data => {
           context.commit('updateData', {sns:'flickr', data:data})
+          resolve()
+        }).catch(response => {
+          console.log(response)
+        })
+      })
+    },
+    tumblrLoad(context, param) {
+      return new Promise(resolve => {
+        let url = `https://api.tumblr.com/v2/tagged?api_key=Z3VFbwMIFqs1Kzo4cU8RLl5HrwoggaSlB0GoERi6Z3tYP3L1hS&tag=${param.keyword}&limit=20&before=&callback=tumblrCallback&_=1527333746403`
+
+        Vue.jsonp(url, {
+          callbackName: 'tumblrCallback'
+        }).then(data => {
+          context.commit('updateData', {sns:'tumblr', data:data})
           resolve()
         }).catch(response => {
           console.log(response)
@@ -107,7 +126,7 @@ export default new Vuex.Store({
         })
 
         // youtube added
-        let youtubeURL = `https://content.googleapis.com/youtube/v3/search?maxResults=50&part=snippet&q=${param.keyword}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw&nextPageToken=${this.state.instagramData.nextPageToken}`
+        let youtubeURL = `https://content.googleapis.com/youtube/v3/search?maxResults=20&part=snippet&q=${param.keyword}&safeSearch=moderate&key=AIzaSyDJH2sAVrMq3v79apTNFO1tJjabR3tk1Mw&nextPageToken=${this.state.instagramData.nextPageToken}`
         Vue.http.get(youtubeURL).then(response => {
           context.commit('modifyData', {sns:'youtube', data:response.data})
           resolve()
@@ -116,8 +135,7 @@ export default new Vuex.Store({
         })
 
         //flickr added
-        console.log(this.state.flickrData.photos)
-        let flickrURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=50&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickrData.photos.page + 1}`
+        let flickrURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=20&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickrData.photos.page + 1}`
         Vue.jsonp(flickrURL, {
           callbackName: 'flickrCallback'
         }).then(data => {
@@ -126,6 +144,17 @@ export default new Vuex.Store({
         }).catch(response => {
           console.log(response)
         })
+
+        //flickr added
+        /*let flickrURL = `https://secure.flickr.com/services/rest/?method=flickr.photos.search&api_key=c95046e39cbbd7d6d71c452ca7a814d6&text=${param.keyword}&privacy_filter=1&safe_search=1&content_type=1&per_page=20&format=json&jsoncallback=flickrCallback&sort=date-posted-desc&extras=date_upload&page=${this.state.flickrData.photos.page + 1}`
+        Vue.jsonp(flickrURL, {
+          callbackName: 'flickrCallback'
+        }).then(data => {
+          context.commit('modifyData', {sns:'flickr', data:data})
+          resolve()
+        }).catch(response => {
+          console.log(response)
+        })*/
       })
     },
   },

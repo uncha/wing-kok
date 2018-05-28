@@ -67,14 +67,17 @@
 		  :visible.sync="dialogVisible"
 		  width="30%">
 		  <template v-if="listData[selectedId]">
-			  <p v-if="listData[selectedId].type != 'youtube'">
-			  	<img style="width:100%;" :src="listData[selectedId].image" />
-			  </p>
-			  <div v-else class="video-container">
+			  <div v-if="listData[selectedId].type == 'youtube'" class="video-container">
 			  	<iframe :src="youtubeSrc" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 			  </div>
+			  <div v-else-if="listData[selectedId].type == 'tumblr' && listData[selectedId].contentType == 'video'">
+			  	<div class="video-container" v-html="listData[selectedId].embed"></div>
+			  </div>
+			  <div v-else>
+			  	<img style="width:100%;" :src="listData[selectedId].image" />
+			  </div>
 		  </template>
-		  <p class="caption">{{listData[selectedId] && listData[selectedId].caption}}</p>
+		  <p class="caption" v-html="listData[selectedId] && listData[selectedId].caption"></p>
 		</el-dialog>
 	</div>
 </template>
@@ -97,13 +100,14 @@
 				title:'',
 				created:'',
 				caption:'',
+				type:'', <-- tumblr data type
 			}
 			*/
 			return {
 				searchValue: '',
 				listData: [],
-				snsList: ['instagram', 'youtube', 'flickr'],
-				checkedSNSList: ['instagram', 'youtube', 'flickr'],
+				snsList: ['instagram', 'youtube', 'flickr', 'tumblr'],
+				checkedSNSList: ['instagram', 'youtube', 'flickr', 'tumblr'],
 				dialogVisible: false,
 				selectedId:undefined,
 			}
@@ -156,6 +160,32 @@
 						})
 					}
 				}
+				// tumblr
+				if(this.$store.state.tumblrData.response){
+					for(let value of this.$store.state.tumblrData.response) {
+						let url, embed
+
+						switch(value.type){
+							case 'photo':
+								url = value.photos[0].original_size.url
+								break
+							case 'video':
+								url = value.thumbnail_url
+								embed = value.player[2].embed_code
+								break
+						}
+
+						this.listData.push({
+							type:'tumblr',
+							image:url,
+	            title:value.blog_name,
+	            created:new Date(value.date).yyyymmdd(),
+	            caption:value.summary,
+	            embed:embed,
+	            contentType:value.type,
+						})
+					}
+				}
 
 				this.listData.sort(function (a, b) {
 					return a.created > b.created ? -1 : a.created < b.created ? 1 : 0
@@ -170,10 +200,11 @@
 		methods: {
 			dataLoad (keyword) {
 				this.searchValue = keyword
-
-				this.$store.dispatch('instagramLoad', {keyword:keyword})
-				this.$store.dispatch('youtubeLoad', {keyword:keyword})
-				this.$store.dispatch('flickrLoad', {keyword:keyword})
+				
+				this.$store.dispatch('instagramLoad', {keyword:this.searchValue})
+				this.$store.dispatch('youtubeLoad', {keyword:this.searchValue})
+				this.$store.dispatch('flickrLoad', {keyword:this.searchValue})
+				this.$store.dispatch('tumblrLoad', {keyword:this.searchValue})
 			},
 			handleSearch () {
 				this.$router.push({ path: '/', query: { keyword: this.searchValue }})
@@ -201,6 +232,9 @@
 						break
 					case 'flickr':
 						src = require('../assets/ico-flickr.png')
+						break
+					case 'tumblr':
+						src = require('../assets/ico-tumblr.png')
 						break
 				}
 
