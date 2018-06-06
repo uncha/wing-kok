@@ -3,7 +3,7 @@
 		<el-row>
 			<el-col>
 				<div class="search-wrap">
-					<el-input v-model="searchValue" placeholder="Please input">
+					<el-input v-on:keyup.13="handleSearch" v-model="searchValue" placeholder="Please input">
 						<el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
 				  </el-input>
 				</div>
@@ -199,6 +199,11 @@
 		},
 		methods: {
 			dataLoad (keyword) {
+				if(!keyword){
+					this.$message('검색어를 입력해 주세요.')
+					return
+				}
+
 				this.searchValue = keyword
 				
 				this.$store.dispatch('instagramLoad', {keyword:this.searchValue})
@@ -207,6 +212,14 @@
 				this.$store.dispatch('tumblrLoad', {keyword:this.searchValue})
 			},
 			handleSearch () {
+				console.log('dddd')
+
+				if(!this.searchValue){
+					this.$message('검색어를 입력해 주세요.')
+					return
+				}
+
+				this.searchValue = this.searchValue.replace(' ', '');
 				this.$router.push({ path: '/', query: { keyword: this.searchValue }})
 			},
 			handleMore () {
