@@ -86,6 +86,7 @@
 	import Vue from 'vue'
 	import $ from 'jquery'
 	import VueMasonry from 'vue-masonry-css'
+	import {fn_twitterTimelineCount} from '../twitter.js'
 
 	Vue.use(VueMasonry)
 
@@ -106,8 +107,8 @@
 			return {
 				searchValue: '',
 				listData: [],
-				snsList: ['instagram', 'youtube', 'flickr', 'tumblr'],
-				checkedSNSList: ['instagram', 'youtube', 'flickr', 'tumblr'],
+				snsList: ['instagram', 'youtube', 'flickr', 'tumblr', 'twitter'],
+				checkedSNSList: ['instagram', 'youtube', 'flickr', 'tumblr', 'twitter'],
 				dialogVisible: false,
 				selectedId:undefined,
 			}
@@ -142,10 +143,10 @@
 						this.listData.push({
 							type:'youtube',
 							image:value.snippet.thumbnails.high.url,
-            	created:new Date(value.snippet.publishedAt).yyyymmdd(),
-            	caption:value.snippet.description,
-            	title:value.snippet.title,
-            	videoId:value.id.videoId,
+			            	created:new Date(value.snippet.publishedAt).yyyymmdd(),
+			            	caption:value.snippet.description,
+			            	title:value.snippet.title,
+			            	videoId:value.id.videoId,
 						})
 					}
 				}
@@ -155,8 +156,8 @@
 						this.listData.push({
 							type:'flickr',
 							image:`http://farm${value.farm}.static.flickr.com/${value.server}/${value.id}_${value.secret}.jpg`,
-	            title:value.title,
-	            created:new Date(value.dateupload * 1000).yyyymmdd(),
+				            title:value.title,
+				            created:new Date(value.dateupload * 1000).yyyymmdd(),
 						})
 					}
 				}
@@ -178,11 +179,28 @@
 						this.listData.push({
 							type:'tumblr',
 							image:url,
-	            title:value.blog_name,
-	            created:new Date(value.date).yyyymmdd(),
-	            caption:value.summary,
-	            embed:embed,
-	            contentType:value.type,
+				            title:value.blog_name,
+				            created:new Date(value.date).yyyymmdd(),
+				            caption:value.summary,
+				            embed:embed,
+				            contentType:value.type,
+						})
+					}
+				}
+
+				// twitter
+				if(this.$store.state.twitterData.statuses){
+					console.log(this.$store.state.twitterData.statuses)
+
+					for(let value of this.$store.state.twitterData.statuses) {
+						this.listData.push({
+							type:'twitter',
+							image:(value.extended_entities) ? value.extended_entities.media[0].media_url : '',
+				            title:value.text,
+				            created:new Date(value.created_at).yyyymmdd(),
+				            //caption:'caption',
+				            //embed:embed,
+				            //contentType:value.type,
 						})
 					}
 				}
@@ -210,10 +228,12 @@
 				this.$store.dispatch('youtubeLoad', {keyword:this.searchValue})
 				this.$store.dispatch('flickrLoad', {keyword:this.searchValue})
 				this.$store.dispatch('tumblrLoad', {keyword:this.searchValue})
+
+				fn_twitterTimelineCount(keyword, '', (data) => {
+					this.$store.dispatch('twitterLoad', data)
+				})
 			},
 			handleSearch () {
-				console.log('dddd')
-
 				if(!this.searchValue){
 					this.$message('검색어를 입력해 주세요.')
 					return
@@ -249,6 +269,9 @@
 					case 'tumblr':
 						src = require('../assets/ico-tumblr.png')
 						break
+					case 'twitter':
+						src = require('../assets/ico-twitter.png')
+						break;
 				}
 
 				return src
@@ -289,18 +312,18 @@
 	.el-dialog .caption {margin-top:10px;}
 
 	.video-container {
-	position: relative;
-	padding-bottom: 56.25%;
-	padding-top: 30px; height: 0; overflow: hidden;
+		position: relative;
+		padding-bottom: 56.25%;
+		padding-top: 30px; height: 0; overflow: hidden;
 	}
 
 	.video-container iframe,
 	.video-container object,
 	.video-container embed {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
 	}
 </style>

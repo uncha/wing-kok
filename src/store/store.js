@@ -13,6 +13,7 @@ export default new Vuex.Store({
     youtubeData:{},
     flickrData:{},
     tumblrData:{},
+    twitterData:{},
   },
   mutations: {
     updateData(state, param) {
@@ -28,6 +29,9 @@ export default new Vuex.Store({
           break
         case 'tumblr':
           state.tumblrData = param.data
+          break
+        case 'twitter':
+          state.twitterData = param.data
           break
       }
     },
@@ -62,16 +66,16 @@ export default new Vuex.Store({
   },
   actions: {
   	instagramLoad (context, param) {
-    	return new Promise(resolve => {
-    		let url = `https://api.instagram.com/v1/tags/${param.keyword && param.keyword.trim()}/media/recent?access_token=2945410720.02e1557.585a0311f0024312a5f7428984943f8e`
+      return new Promise(resolve => {
+        let url = `https://api.instagram.com/v1/tags/${param.keyword && param.keyword.trim()}/media/recent?access_token=2945410720.02e1557.01204bc96d2c40158da88662594a684d`
 
-    		Vue.http.get(url).then(response => {
-			    context.commit('updateData', {sns:'instagram', data:response.data})
-			    resolve()
-			  }, response => {
-			  	console.log(response)
-			  })
-    	})
+        Vue.http.get(url).then(response => {
+          context.commit('updateData', {sns:'instagram', data:response.data})
+          resolve()
+        }, response => {
+          console.log(response)
+        })
+      })
     },
     youtubeLoad (context, param) {
       return new Promise(resolve => {
@@ -112,6 +116,9 @@ export default new Vuex.Store({
           console.log(response)
         })
       })
+    },
+    twitterLoad(context, data) {
+      context.commit('updateData', {sns:'twitter', data:data})
     },
     addedList (context, param) {
       return new Promise(resolve => {
